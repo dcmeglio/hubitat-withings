@@ -491,6 +491,7 @@ def initialize() {
 	cleanupChildDevices()
 	createChildDevices()
 	updateSubscriptions()
+	schedule("0 */30 * * * ? *", refreshDevices)
 }
 
 def buildDNI(deviceid) {
@@ -551,6 +552,23 @@ def cleanupChildDevices()
 private removeChildDevices(devices) {
 	devices.each {
 		deleteChildDevice(it.deviceNetworkId) // 'it' is default
+	}
+}
+
+def refreshDevices() {
+	def body = apiGet("v2/user", "getdevice")
+	for (device in body?.devices) {
+		def dev = getChildDevice(buildDNI(device.deviceid))
+		if (dev != null) {
+			def intBattery = 30
+			if (device.battery == "high")
+				intBattery = 100
+			else if (device.battery == "medium")
+				intBattery = 50
+			else if (device.battery == "low")
+				intBattery = 20
+			dev.sendEvent(name: "battery", value: intBattery)
+		}
 	}
 }
 

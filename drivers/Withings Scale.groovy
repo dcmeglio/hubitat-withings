@@ -8,7 +8,7 @@
 metadata {
     definition(name: "Withings Scale", namespace: "dcm.withings", author: "dmeglio@gmail.com") {
         capability "Sensor"
-		capability "Refresh"
+		capability "Battery"
 
         attribute "weight", "number"
         attribute "weightDisplay", "string"
@@ -24,8 +24,4 @@ metadata {
         attribute "boneMassDisplay", "string"
         attribute "pulseWaveVelocity", "number"
     }
-}
-
-def refresh() {
-	
 }
