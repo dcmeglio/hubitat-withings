@@ -26,7 +26,13 @@ preferences {
 	page(name: "prefDevices")
 }
 
-@Field def applids = [
+@Field static def measurementSystems = [
+	imperial: 1,
+	metric: 2,
+	ukimperial: 3
+]
+
+@Field static def applids = [
 	weight: 1,
 	heartrate: 4,
 	activity: 16,
@@ -38,27 +44,87 @@ preferences {
 ]
 
 @Field def measures = [
-	1: "weight",
-	4: "height",
-	5: "fatFreeMass",
-	6: "fatRatio",
-	8: "fatMassWeight",
-	9: "diastolicBloodPressure",
-	10: "systolicBloodPressure",
-	11: "pulse",
-	12: "temperature",
-	54: "oxygenSaturation",
-	71: "bodyTemperature",
-	73: "skinTemperature",
-	76: "muscleMass",
-	77: "hydration",
-	88: "boneMass",
-	91: "pulseWaveVelocity"
+	1: [attribute: "weight", displayAttribute: "weightDisplay", converter: this.&massConverter],
+	4: [attribute: "height", displayAttribute: "heightDisplay", converter: this.&heightConverter],
+	5: [attribute: "fatFreeMass", displayAttribute: "fatFreeMassDisplay", converter: this.&massConverter],
+	6: [attribute: "fatRatio", converter: this.&fatRatioConverter],
+	8: [attribute: "fatMassWeight", displayAttribute: "fatMassWeightDisplay", converter: this.&massConverter],
+	9: [attribute: "diastolicBloodPressure", converter: this.&bloodPressureConverter],
+	10: [attribute: "systolicBloodPressure", converter: this.&bloodPressureConverter],
+	11: [attribute: "pulse", converter: this.&pulseConverter],
+	12: [attribute: "temperature", converter: this.&temperatureConverter],
+	54: [attribute: "oxygenSaturation", converter: this.&oxygenSaturationConverter],
+	71: [attribute: "bodyTemperature", converter: this.&temperatureConverter],
+	73: [attribute: "skinTemperature", converter: this.&temperatureConverter],
+	76: [attribute: "muscleMass", displayAttribute: "muscleMassDisplay", converter: this.&massConverter],
+	77: [attribute: "hydration", converter: this.&massConverter],
+	88: [attribute: "boneMass", displayAttribute: "boneMassDisplay", converter: this.&massConverter],
+	91: [attribute: "pulseWaveVelocity", converter: this.&pulseWaveVelocityConverter]
 ]
+
+// Converters
+def massConverter(weight, unit) {
+	def metricValue = weight*(10**unit)
+
+	if (measurementSystem.toInteger() == measurementSystems.metric)
+		return [value: metricValue, unit: "kg", displayValue: "${metricValue}kg"]
+	else if (measurementSystem.toInteger() == measurementSystems.imperial) {
+		def lbs = (metricValue * 2.20462262)
+		def oz = (int)((lbs-(int)lbs)*16.0).round(0)
+		return [value: lbs, unit: "lbs", displayValue: "${(int)lbs}lbs ${oz}oz"]
+	}
+	else if (measurementSystem.toInteger() == measurementSystems.ukimperial) {
+		def stones = (metricValue * 0.15747304)
+		def lbs = (stones-(int)stones)*14
+		def oz = (int)((lbs-(int)lbs)*16.0).round(0)
+		return [value: stones, unit: "st", displayValue: "${(int)stones}st ${(int)lbs}lbs ${oz}oz"]
+	}
+}
+
+def heightConverter(height, unit) {
+	def metricValue = weight*(10**unit)
+	if (measurementSystem.toInteger() == measurementSystems.metric)
+		return [value: metricValue, unit: "m"]
+	else {
+		def ft = metricValue * 3.2808399
+		def inches = (int)((ft-(int)ft)*12.0).round(0)
+		return [value: ft, unit: "ft", displayValue: "${(int)ft}ft ${inches}in"]
+	}
+}
+
+def fatRatioConverter(ratio, unit) {
+	return [value: ratio*(10**unit), unit: "%"]
+}
+
+def bloodPressureConverter(bp, unit) {
+	return [value: bp*(10**unit), unit: "mmHg"]
+}
+
+def pulseConverter(pulse, unit) {
+	return [value: pulse, unit: "bpm"]
+}
+
+def temperatureConverter(temp, unit) {
+	if (measurementSystem.toInteger() == measurementSystems.metric)
+		return [value: temp*(10**unit), unit: "C"]
+	else {
+		return [value: fahrenheitToCelsius(temp*(10**unit)), unit: "F"]
+	}
+}
+
+def oxygenSaturationConverter(o2sat, unit) {
+	return [value: o2sat*(10**unit), unit: "%"]
+}
+
+def pulseWaveVelocityConverter(pulsewavevelocity, unit) {
+	return [value: pulsewavevelocity*(10**unit), unit: "m/s"]
+}
 
 def prefMain() {
 	return dynamicPage(name: "prefMain", title: "Withings Integration", nextPage: "prefDevices", uninstall:false, install: false) {
 		section {
+			paragraph """To use this integration you will need to obtain API access from Withings. You can do this by going to the <a href="https://account.withings.com/partner/add_oauth2" target="_blank">Withings Partner Portal</a>. The Callback URL must be set to <b>https://cloud.hubitat.com/oauth/stateredirect</b> and the Environment must be set to <b>Prod</b>. Enter both the <cbode>Client ID</b> and <b>Client Secret</b> below. """
+
 			def desc = ""
 			if (!state.authToken) {
 				showHideNextButton(false)
@@ -71,12 +137,12 @@ def prefMain() {
 			input "clientID", "text", title: "API Client ID", required: true
 			input "clientSecret", "text", title: "API Client Secret", required: true
 			href url: oauthInitialize(), style: "external", required: true, title: "Withings Account Authorization", description: desc
+			input "measurementSystem", "enum", title: "Measurement System", options: [1: "Imperial", 2: "Metric", 3: "Imperial (UK)"], required: true
 		}
 	}
 }
 
 def prefDevices() {
-	log.debug "---called"
 	state.devices = getWithingsDevices() 
 	return dynamicPage(name: "prefDevices", title: "Withings Devices", uninstall:true, install: true) {
 		section {
@@ -86,8 +152,6 @@ def prefDevices() {
 				input "sleepMonitors", "enum", title: "Sleep Monitors", options: state.devices.sleepMonitors, multiple: true
 			if (state.devices?.activityTrackers?.size() > 0)
 				input "activityTrackers", "enum", title: "Activity Trackers", options: state.devices.activityTrackers, multiple: true
-			if (state.devices?.babyMonitors?.size() > 0)
-				input "babyMonitors", "enum", title: "Baby Monitors", options: state.devices.babyMonitors, multiple: true
 			if (state.devices?.bloodPressure?.size() > 0)
 				input "bloodPressure", "enum", title: "Blood Pressure Monitors", options: state.devices.bloodPressure, multiple: true
 			if (state.devices?.thermometers?.size() > 0)
@@ -217,7 +281,6 @@ def getWithingsDevices() {
 	def scales = [:]
 	def sleepMonitors = [:]
 	def activityTrackers = [:]
-	def babyMonitors = [:]
 	def bloodPressure = [:]
 	def thermometers = [:]
 	def body = apiGet("v2/user", "getdevice")
@@ -228,14 +291,12 @@ def getWithingsDevices() {
 			sleepMonitors[device.deviceid] = device.model
 		else if (device.type == "Activity Tracker")
 			activityTrackers[device.deviceid] = device.model
-		else if (device.type == "Babyphone")
-			babyMonitors[device.deviceid] = device.model
 		else if (device.type == "Blood Pressure Monitor")
 			bloodPressure[device.deviceid] = device.model
 		else if (device.type == "Smart Connected Thermometer")
 			thermometers[device.deviceid] = device.model
 	}
-	return [scales: scales, sleepMonitors: sleepMonitors, activityTrackers: activityTrackers, babyMonitors: babyMonitors, bloodPressure: bloodPressure, thermometers: thermometers]
+	return [scales: scales, sleepMonitors: sleepMonitors, activityTrackers: activityTrackers, bloodPressure: bloodPressure, thermometers: thermometers]
 }
 
 
@@ -275,27 +336,86 @@ def callbackUrl(type) {
 def withingsNotification() {
 	// Withings requires that we respond within 2 seconds with a success message. So do this in the background so we
 	// can return immediately.
+
 	runInMillis(1,asyncWithingsNotificationHandler,[data:params, overwrite:false])
 }
 
-def asyncWithingsNotificationHandler(data) {
-	switch (data.params.type) {
+def asyncWithingsNotificationHandler(params) {
+	switch (params.type) {
 		case "weight":
+			processWeight(params.startdate, params.enddate)
 			break
 		case "heartrate":
+			processHeartrate(params.startdate, params.enddate)
+			break
+		case "activity":
 			break
 		case "bedIn":
 			break
 		case "bedOut":
 			break
 		case "sleep":
+			processSleep(params.startdate, params.enddate)
 			break
+	}
+}
+
+def processWeight(startDate, endDate) {
+	def data = apiGet("measure", "getmeas", [startdate: startDate, enddate: endDate, category: 1])?.measuregrps
+
+	if (!data)
+		return
+
+	data = data.sort {it -> it.date}
+	for (group in data) {
+		def dev = getChildDevice("withings:"+group.deviceid)
+		// A device that the user didn't import
+		if (!dev)
+			continue
+
+		// Heart related measurements
+		sendEventsForMeasurements(dev, group.measures, [1,5,6,8,76,77,88,91])
+	}
+}
+
+def processHeartrate(startDate, endDate) {
+	def data = apiGet("measure", "getmeas", [startdate: startDate, enddate: endDate, category: 1])?.measuregrps
+
+	if (!data)
+		return
+
+	data = data.sort {it -> it.date}
+	for (group in data) {
+		def dev = getChildDevice("withings:"+group.deviceid)
+		// A device that the user didn't import
+		if (!dev)
+			continue
+
+		// Heart related measurements
+		sendEventsForMeasurements(dev, group.measures, [9,10,11])
+	}
+}
+
+def processSleep(startDate, endDate) {
+	
+}
+
+def sendEventsForMeasurements(dev, measurements, types) {
+	for (measurement in measurements) {
+		if (types.contains(measurement.type)) {
+			def attrib = measures[measurement.type].attribute
+			def displayAttrib = measures[measurement.type].displayAttribute
+			def result = measures[measurement.type].converter.call(measurement.value, measurement.unit)
+			dev.sendEvent(name: attrib, value: result.value, unit: result.unit)
+			if (displayAttrib != null)
+			dev.sendEvent(name: displayAttrib, value: result.displayValue)
+		}
 	}
 }
 // API call methods
 
 def apiGet(endpoint, action, query = null) {
-	log.debug "${endpoint}?action=${action} -- ${query}"
+	logDebug "${endpoint}?action=${action} -- ${query}"
 	if (state.authTokenExpires < now()) {
 		if (!refreshToken())
 			return null
@@ -316,7 +436,7 @@ def apiGet(endpoint, action, query = null) {
 		if (query != null)
 			params.query << query
 		httpGet(params) { resp ->
-		log.debug resp.data
+		logDebug resp.data
 			if (resp.data.status == 0)
 				result = resp.data.body
 		}
@@ -365,11 +485,6 @@ def createChildDevices() {
 		if (!getChildDevice("withings:" + activityTracker))
             addChildDevice("dcm.withings", "Withings Activity Tracker", "withings:" + activityTracker, 1234, ["name": state.devices.activityTrackers[activityTracker], isComponent: false])
 	}
-	for (babyMonitor in babyMonitors)
-	{
-		if (!getChildDevice("withings:" + babyMonitor))
-            addChildDevice("dcm.withings", "Withings Baby Monitor", "withings:" + babyMonitor, 1234, ["name": state.devices.babyMonitors[babyMonitor], isComponent: false])
-	}
 	for (bp in bloodPressure)
 	{
 		if (!getChildDevice("withings:" + bp))
@@ -387,7 +502,7 @@ def cleanupChildDevices()
 	for (device in getChildDevices())
 	{
 		def deviceId = device.deviceNetworkId.replace("withings:","")
-		def allDevices = scales + sleepMonitors + activityTrackers + babyMonitors + bloodPressure + thermometers
+		def allDevices = scales + sleepMonitors + activityTrackers + bloodPressure + thermometers
 		def deviceFound = false
 		for (dev in allDevices)
 		{
