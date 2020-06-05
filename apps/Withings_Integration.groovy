@@ -361,6 +361,7 @@ def asyncWithingsNotificationHandler(params) {
 			processHeartrate(params.startdate, params.enddate)
 			break
 		case "activity":
+			processActivity(params.date)
 			break
 		case "bedIn":
 			processBedPresence(true, params.deviceid)
@@ -371,6 +372,34 @@ def asyncWithingsNotificationHandler(params) {
 		case "sleep":
 			processSleep(params.startdate, params.enddate)
 			break
+	}
+}
+
+def processActivity(date) {
+	def data = apiGet("v2/measure", "getactivity", [startdateymd: date, enddateymd: date, data_fields: "steps,distance,elevation,soft,moderate,intense,active,calories,totalcalories,hr_average,hr_min,hr_max,hr_zone_0,hr_zone_1,hr_zone_2,hr_zone_3"])?.activities
+
+	for (item in data) {
+		def dev = getChildDevice(buildDNI(item.deviceid))
+
+		if (!dev)
+			continue
+
+		dev.sendEvent(name: "steps", value: item.steps)
+		dev.sendEvent(name: "distance", value: item.distance )
+		dev.sendEvent(name: "elevation", value: item.elevation )
+		dev.sendEvent(name: "soft", value: item.soft )
+		dev.sendEvent(name: "moderate", value: item.moderate )
+		dev.sendEvent(name: "intense", value: item.intense )
+		dev.sendEvent(name: "active", value: item.active )
+		dev.sendEvent(name: "calories", value: item.calories )
+		dev.sendEvent(name: "totalcalories", value: item.totalcalories )
+		dev.sendEvent(name: "hr_average", value: item.hr_average )
+		dev.sendEvent(name: "hr_min", value: item.hr_min )
+		dev.sendEvent(name: "hr_max", value: item.hr_max )
+		dev.sendEvent(name: "hr_zone_0", value: item.hr_zone_0 )
+		dev.sendEvent(name: "hr_zone_1", value: item.hr_zone_1 )
+		dev.sendEvent(name: "hr_zone_2", value: item.hr_zone_2 )
+		dev.sendEvent(name: "hr_zone_3", value: item.hr_zone_3 )
 	}
 }
 
@@ -420,10 +449,14 @@ def processHeartrate(startDate, endDate) {
 }
 
 def processSleep(startDate, endDate) {
-	def data = apiGet("sleep", "get", [startdate: startDate, enddate: endDate, data_fields: "hr,rr,snoring"])
+	def data = apiGet("v2/sleep", "get", [startdate: startDate, enddate: endDate, data_fields: "hr,rr,snoring"])?.series
 
 	if (!data)
 		return
+
+	for (item in data) {
+
+	}
 }
 
 def sendEventsForMeasurements(dev, measurements, types) {
