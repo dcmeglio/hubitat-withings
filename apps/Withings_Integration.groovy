@@ -7,6 +7,8 @@
  *	If you find this useful, donations are always appreciated 
  *	https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7LBRPJRLJSDDN&source=url
  */
+
+ import groovy.transform.Field
  
 definition(
     name: "Withings Integration",
@@ -24,6 +26,36 @@ preferences {
 	page(name: "prefDevices")
 }
 
+@Field def applids = [
+	weight: 1,
+	heartrate: 4,
+	activity: 16,
+	sleep: 44,
+	user: 46,
+	bedIn: 50,
+	bedOut: 51,
+	inflateDone: 52
+]
+
+@Field def measures = [
+	1: "weight",
+	4: "height",
+	5: "fatFreeMass",
+	6: "fatRatio",
+	8: "fatMassWeight",
+	9: "diastolicBloodPressure",
+	10: "systolicBloodPressure",
+	11: "pulse",
+	12: "temperature",
+	54: "oxygenSaturation",
+	71: "bodyTemperature",
+	73: "skinTemperature",
+	76: "muscleMass",
+	77: "hydration",
+	88: "boneMass",
+	91: "pulseWaveVelocity"
+]
+
 def prefMain() {
 	return dynamicPage(name: "prefMain", title: "Withings Integration", nextPage: "prefDevices", uninstall:false, install: false) {
 		section {
@@ -36,54 +68,32 @@ def prefMain() {
 				showHideNextButton(true)
 				desc = "Your Hubitat and Withings accounts are connected"
 			}
+			input "clientID", "text", title: "API Client ID", required: true
+			input "clientSecret", "text", title: "API Client Secret", required: true
 			href url: oauthInitialize(), style: "external", required: true, title: "Withings Account Authorization", description: desc
 		}
 	}
 }
 
 def prefDevices() {
-	state.devices = getDevices()
-	return dynamicPage(name: "prefMain", title: "Withings Devices", uninstall:true, install: true) {
+	log.debug "---called"
+	state.devices = getWithingsDevices() 
+	return dynamicPage(name: "prefDevices", title: "Withings Devices", uninstall:true, install: true) {
 		section {
-			if (devices?.scales?.size() > 0)
+			if (state.devices?.scales?.size() > 0)
 				input "scales", "enum", title: "Scales", options: state.devices.scales, multiple: true
-			if (devices?.sleepMonitors?.size() > 0)
+			if (state.devices?.sleepMonitors?.size() > 0)
 				input "sleepMonitors", "enum", title: "Sleep Monitors", options: state.devices.sleepMonitors, multiple: true
-			if (devices?.activityTrackers?.size() > 0)
+			if (state.devices?.activityTrackers?.size() > 0)
 				input "activityTrackers", "enum", title: "Activity Trackers", options: state.devices.activityTrackers, multiple: true
-			if (devices?.babyMonitors?.size() > 0)
+			if (state.devices?.babyMonitors?.size() > 0)
 				input "babyMonitors", "enum", title: "Baby Monitors", options: state.devices.babyMonitors, multiple: true
-			if (devices?.bloodPressure?.size() > 0)
+			if (state.devices?.bloodPressure?.size() > 0)
 				input "bloodPressure", "enum", title: "Blood Pressure Monitors", options: state.devices.bloodPressure, multiple: true
-			if (devices?.thermometers?.size() > 0)
+			if (state.devices?.thermometers?.size() > 0)
 				input "thermometers", "enum", title: "Thermometers", options: state.devices.thermometers, multiple: true
 		}
 	}
-}
-
-def getDevices() {
-	def scales = [:]
-	def sleepMonitors = [:]
-	def activityTrackers = [:]
-	def babyMonitors = [:]
-	def bloodPressure = [:]
-	def thermometers = [:]
-	def body = apiGet("user", "getdevice")
-	for (device in body.devices) {
-		if (device.type == "Scale")
-			scales[device.deviceid] = device.model
-		else if (device.type == "Sleep Monitor")
-			sleepMonitors[device.deviceid] = device.model
-		else if (device.type == "Activity Tracker")
-			activityTrackers[device.deviceid] = device.model
-		else if (device.type == "Babyphone")
-			babyMonitors[device.deviceid] = device.model
-		else if (device.type == "Blood Pressure Monitor")
-			bloodPressure[device.deviceid] = device.model
-		else if (device.type == "Smart Connected Thermometer")
-			thermometers[device.deviceid] = device.model
-	}
-	return [scales: scales, sleepMonitors: sleepMonitors, activityTrackers: activityTrackers, babyMonitors: babyMonitors, bloodPressure: bloodPressure, thermometers: thermometers]
 }
 
 mappings {
@@ -104,7 +114,8 @@ mappings {
 	}
 	path("/notification/:type") {
 		action: [
-			GET: "withingsNotification"
+			GET: "withingsNotification",
+			POST: "withingsNotification"
 		]
 	}
 }
@@ -116,7 +127,7 @@ def oauthInitialize() {
 
 	state.oauthState = "${getHubUID()}/apps/${app.id}/callback?access_token=${state.accessToken}"
 		
-	return "https://account.withings.com/oauth2_user/authorize2?response_type=code&client_id=90db688ef82e2414426b5c84f0c126af4aa17c1d80a048174bdac2575c8a164f&scope=${URLEncoder.encode("user.info,user.activity,user.sleepevents")}&redirect_uri=${URLEncoder.encode("https://cloud.hubitat.com/oauth/stateredirect")}&state=${URLEncoder.encode(state.oauthState)}"
+	return "https://account.withings.com/oauth2_user/authorize2?response_type=code&client_id=${clientID}&scope=${URLEncoder.encode("user.info,user.activity,user.sleepevents,user.metrics")}&redirect_uri=${URLEncoder.encode("https://cloud.hubitat.com/oauth/stateredirect")}&state=${URLEncoder.encode(state.oauthState)}"
 }
 
 def oauthCallback() {
@@ -128,8 +139,8 @@ def oauthCallback() {
 				body: [
 					"grant_type": "authorization_code",
 					code: params.code,
-					client_id : "90db688ef82e2414426b5c84f0c126af4aa17c1d80a048174bdac2575c8a164f",
-					client_secret: "3432ef512a483310c988135be830b3e1836a46fb298b8da67bb3e90b3a70cc98",
+					client_id : clientID,
+					client_secret: clientSecret,
 					redirect_uri: "https://cloud.hubitat.com/oauth/stateredirect"
 				]
 			]) { resp ->
@@ -201,13 +212,90 @@ def refreshToken() {
 	return result
 }
 
-def withingsNotification() {
-	log.debug params.type
+// Business logic
+def getWithingsDevices() {
+	def scales = [:]
+	def sleepMonitors = [:]
+	def activityTrackers = [:]
+	def babyMonitors = [:]
+	def bloodPressure = [:]
+	def thermometers = [:]
+	def body = apiGet("v2/user", "getdevice")
+	for (device in body.devices) {
+		if (device.type == "Scale")
+			scales[device.deviceid] = device.model
+		else if (device.type == "Sleep Monitor")
+			sleepMonitors[device.deviceid] = device.model
+		else if (device.type == "Activity Tracker")
+			activityTrackers[device.deviceid] = device.model
+		else if (device.type == "Babyphone")
+			babyMonitors[device.deviceid] = device.model
+		else if (device.type == "Blood Pressure Monitor")
+			bloodPressure[device.deviceid] = device.model
+		else if (device.type == "Smart Connected Thermometer")
+			thermometers[device.deviceid] = device.model
+	}
+	return [scales: scales, sleepMonitors: sleepMonitors, activityTrackers: activityTrackers, babyMonitors: babyMonitors, bloodPressure: bloodPressure, thermometers: thermometers]
 }
 
+
+def updateSubscriptions() {
+	def subs = apiGet("notify", "list")?.profiles
+	
+	if (scales?.size() > 0) {
+		if (!subs.find { it-> it.appli == applids.weight })
+			apiGet("notify", "subscribe", [callbackurl: callbackUrl("weight"), appli: applids.weight])
+		if (!subs.find { it-> it.appli == applids.heartrate })
+			apiGet("notify", "subscribe", [callbackurl: callbackUrl("heartrate"), appli: applids.heartrate])
+	}
+	if (activityTrackers?.size() > 0) {
+		if (!subs.find { it-> it.appli == applids.activity })
+			apiGet("notify", "subscribe", [callbackurl: callbackUrl("activity"), appli: applids.activity])
+	}
+	if (bloodPressure?.size() > 0) {
+		if (!subs.find { it-> it.appli == applids.heartrate })
+			apiGet("notify", "subscribe", [callbackurl: callbackUrl("heartrate"), appli: applids.heartrate])
+	}
+	if (sleepMonitors?.size() > 0) {
+		if (!subs.find { it-> it.appli == applids.sleep })
+			apiGet("notify", "subscribe", [callbackurl: callbackUrl("sleep"), appli: applids.sleep])
+		if (!subs.find { it-> it.appli == applids.bedIn })
+			apiGet("notify", "subscribe", [callbackurl: callbackUrl("bedIn"), appli: applids.bedIn])
+		if (!subs.find { it-> it.appli == applids.bedOut })
+			apiGet("notify", "subscribe", [callbackurl: callbackUrl("bedOut"), appli: applids.bedOut])
+	}
+}
+
+def callbackUrl(type) {
+	// This looks insecure but it's really not. The Withings API apparently requires HTTP (what???)
+	// But, on the HE side HSTS is supported so it redirects right to HTTPS.
+	return "${getFullApiServerUrl()}/notification/${type}?access_token=${state.accessToken}".replace("https://", "http://")
+}
+
+def withingsNotification() {
+	// Withings requires that we respond within 2 seconds with a success message. So do this in the background so we
+	// can return immediately.
+	runInMillis(1,asyncWithingsNotificationHandler,[data:params, overwrite:false])
+}
+
+def asyncWithingsNotificationHandler(data) {
+	switch (data.params.type) {
+		case "weight":
+			break
+		case "heartrate":
+			break
+		case "bedIn":
+			break
+		case "bedOut":
+			break
+		case "sleep":
+			break
+	}
+}
 // API call methods
 
-def apiGet(endpoint, action) {
+def apiGet(endpoint, action, query = null) {
+	log.debug "${endpoint}?action=${action} -- ${query}"
 	if (state.authTokenExpires < now()) {
 		if (!refreshToken())
 			return null
@@ -216,7 +304,7 @@ def apiGet(endpoint, action) {
 	try {
 		def params = [
 			uri: "https://wbsapi.withings.net",
-			path: "/v2/${endpoint}",
+			path: "/${endpoint}",
 			query: [
 				action: action
 			],
@@ -225,6 +313,8 @@ def apiGet(endpoint, action) {
 				"Authorization": "Bearer " + state.authToken
 			]
 		]
+		if (query != null)
+			params.query << query
 		httpGet(params) { resp ->
 		log.debug resp.data
 			if (resp.data.status == 0)
@@ -256,6 +346,7 @@ def updated() {
 def initialize() {
 	cleanupChildDevices()
 	createChildDevices()
+	updateSubscriptions()
 }
 
 def createChildDevices() {
