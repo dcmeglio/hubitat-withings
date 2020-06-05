@@ -8,7 +8,6 @@
 metadata {
     definition(name: "Withings Blood Pressure Monitor", namespace: "dcm.withings", author: "dmeglio@gmail.com") {
         capability "Sensor"
-        capability "TemperatureMeasurement"
 		capability "Refresh"
 
         

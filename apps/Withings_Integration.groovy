@@ -23,6 +23,7 @@ definition(
 
 preferences {
     page(name: "prefMain")
+	page(name: "prefOAuth")
 	page(name: "prefDevices")
 }
 
@@ -121,10 +122,22 @@ def pulseWaveVelocityConverter(pulsewavevelocity, unit) {
 }
 
 def prefMain() {
-	return dynamicPage(name: "prefMain", title: "Withings Integration", nextPage: "prefDevices", uninstall:false, install: false) {
+	return dynamicPage(name: "prefMain", title: "Withings Integration", nextPage: "prefOAuth", uninstall:false, install: false) {
 		section {
+			
 			paragraph """To use this integration you will need to obtain API access from Withings. You can do this by going to the <a href="https://account.withings.com/partner/add_oauth2" target="_blank">Withings Partner Portal</a>. The Callback URL must be set to <b>https://cloud.hubitat.com/oauth/stateredirect</b> and the Environment must be set to <b>Prod</b>. Enter both the <cbode>Client ID</b> and <b>Client Secret</b> below. """
+			paragraph "If you have multiple users in Withings you will need to install multiple copies of this app, however you can use the same API for both."
 
+			input "userName", "text", title: "The username associated with this instance of the integration", required: true
+			input "clientID", "text", title: "API Client ID", required: true
+			input "clientSecret", "text", title: "API Client Secret", required: true
+			input "measurementSystem", "enum", title: "Measurement System", options: [1: "Imperial", 2: "Metric", 3: "Imperial (UK)"], required: true
+		}
+	}
+}
+def prefOAuth() {
+	return dynamicPage(name: "prefOAuth", title: "Withings OAuth", nextPage: "prefDevices", uninstall:false, install: false) {
+		section {	
 			def desc = ""
 			if (!state.authToken) {
 				showHideNextButton(false)
@@ -134,15 +147,13 @@ def prefMain() {
 				showHideNextButton(true)
 				desc = "Your Hubitat and Withings accounts are connected"
 			}
-			input "clientID", "text", title: "API Client ID", required: true
-			input "clientSecret", "text", title: "API Client Secret", required: true
 			href url: oauthInitialize(), style: "external", required: true, title: "Withings Account Authorization", description: desc
-			input "measurementSystem", "enum", title: "Measurement System", options: [1: "Imperial", 2: "Metric", 3: "Imperial (UK)"], required: true
 		}
 	}
 }
 
 def prefDevices() {
+	app.updateLabel("Withings Integration - ${userName}")
 	state.devices = getWithingsDevices() 
 	return dynamicPage(name: "prefDevices", title: "Withings Devices", uninstall:true, install: true) {
 		section {
@@ -212,6 +223,7 @@ def oauthCallback() {
                     state.refreshToken = resp.data.refresh_token
                     state.authToken = resp.data.access_token
                     state.authTokenExpires = now() + (resp.data.expires_in * 1000)
+					state.userid = resp.data.userid
                 }
             }
 		} 
@@ -351,13 +363,24 @@ def asyncWithingsNotificationHandler(params) {
 		case "activity":
 			break
 		case "bedIn":
+			processBedPresence(true, params.deviceid)
 			break
 		case "bedOut":
+			processBedPresence(false, params.deviceid)
 			break
 		case "sleep":
 			processSleep(params.startdate, params.enddate)
 			break
 	}
+}
+
+def processBedPresence(inBed, deviceID) {
+	def dev = getChildDevice("withings:"+state.userid+":"+deviceID)
+
+	if (!dev)
+		return
+
+	dev.sendEvent(name: "presence", value: inBed ? "present" : "not present")
 }
 
 def processWeight(startDate, endDate) {
@@ -368,7 +391,7 @@ def processWeight(startDate, endDate) {
 
 	data = data.sort {it -> it.date}
 	for (group in data) {
-		def dev = getChildDevice("withings:"+group.deviceid)
+		def dev = getChildDevice("withings:"+state.userid+":"+group.deviceid)
 		// A device that the user didn't import
 		if (!dev)
 			continue
@@ -386,7 +409,7 @@ def processHeartrate(startDate, endDate) {
 
 	data = data.sort {it -> it.date}
 	for (group in data) {
-		def dev = getChildDevice("withings:"+group.deviceid)
+		def dev = getChildDevice("withings:"+state.userid+":"+group.deviceid)
 		// A device that the user didn't import
 		if (!dev)
 			continue
@@ -454,6 +477,7 @@ def installed() {
 
 def uninstalled() {
 	logDebug "uninstalling app"
+	removeChildDevices(getChildDevices())
 }
 
 def updated() {	
@@ -469,31 +493,35 @@ def initialize() {
 	updateSubscriptions()
 }
 
+def buildDNI(deviceid) {
+	return "withings:${state.userid}:${deviceid}"
+}
+
 def createChildDevices() {
 	for (scale in scales)
 	{
-		if (!getChildDevice("withings:" + scale))
-            addChildDevice("dcm.withings", "Withings Scale", "withings:" + scale, 1234, ["name": state.devices.scales[scale], isComponent: false])
+		if (!getChildDevice(buildDNI(scale)))
+            addChildDevice("dcm.withings", "Withings Scale", buildDNI(scale), 1234, ["name": "${userName} ${state.devices.scales[scale]}", isComponent: false])
 	}
 	for (sleepMonitor in sleepMonitors)
 	{
-		if (!getChildDevice("withings:" + sleepMonitor))
-            addChildDevice("dcm.withings", "Withings Sleep Monitor", "withings:" + sleepMonitor, 1234, ["name": state.devices.sleepMonitors[sleepMonitor], isComponent: false])
+		if (!getChildDevice(buildDNI(sleepMonitor)))
+            addChildDevice("dcm.withings", "Withings Sleep Monitor", buildDNI(sleepMonitor), 1234, ["name": "${userName} ${state.devices.sleepMonitors[sleepMonitor]}", isComponent: false])
 	}
 	for (activityTracker in activityTrackers)
 	{
-		if (!getChildDevice("withings:" + activityTracker))
-            addChildDevice("dcm.withings", "Withings Activity Tracker", "withings:" + activityTracker, 1234, ["name": state.devices.activityTrackers[activityTracker], isComponent: false])
+		if (!getChildDevice(buildDNI(activityTracker)))
+            addChildDevice("dcm.withings", "Withings Activity Tracker", buildDNI(activityTracker), 1234, ["name": "${userName} ${state.devices.activityTrackers[activityTracker]}", isComponent: false])
 	}
 	for (bp in bloodPressure)
 	{
-		if (!getChildDevice("withings:" + bp))
-            addChildDevice("dcm.withings", "Withings Blood Pressure Monitor", "withings:" + bp, 1234, ["name": state.devices.bloodPressure[bp], isComponent: false])
+		if (!getChildDevice(buildDNI(bp)))
+            addChildDevice("dcm.withings", "Withings Blood Pressure Monitor", buildDNI(bp), 1234, ["name": "${userName} ${state.devices.bloodPressure[bp]}", isComponent: false])
 	}
 	for (thermometer in thermometers)
 	{
-		if (!getChildDevice("withings:" + thermometer))
-            addChildDevice("dcm.withings", "Withings Thermometer", "withings:" + thermometer, 1234, ["name": state.devices.thermometers[thermometer], isComponent: false])
+		if (!getChildDevice(buildDNI(thermometer)))
+            addChildDevice("dcm.withings", "Withings Thermometer", buildDNI(thermometer), 1234, ["name": "${userName} ${state.devices.thermometers[thermometer]}", isComponent: false])
 	}
 }
 
@@ -506,7 +534,7 @@ def cleanupChildDevices()
 		def deviceFound = false
 		for (dev in allDevices)
 		{
-			if (dev == deviceId)
+			if (state.userid + ":" + dev == deviceId)
 			{
 				deviceFound = true
 				break
@@ -520,6 +548,11 @@ def cleanupChildDevices()
 	}
 }
 
+private removeChildDevices(devices) {
+	devices.each {
+		deleteChildDevice(it.deviceNetworkId) // 'it' is default
+	}
+}
 
 def showHideNextButton(show) {
 	if(show) paragraph "<script>\$('button[name=\"_action_next\"]').show()</script>"  
