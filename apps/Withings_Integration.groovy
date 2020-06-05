@@ -375,7 +375,7 @@ def asyncWithingsNotificationHandler(params) {
 }
 
 def processBedPresence(inBed, deviceID) {
-	def dev = getChildDevice("withings:"+state.userid+":"+deviceID)
+	def dev = getChildDevice(buildDNI(deviceID))
 
 	if (!dev)
 		return
@@ -391,7 +391,7 @@ def processWeight(startDate, endDate) {
 
 	data = data.sort {it -> it.date}
 	for (group in data) {
-		def dev = getChildDevice("withings:"+state.userid+":"+group.deviceid)
+		def dev = getChildDevice(buildDNI(group.deviceid))
 		// A device that the user didn't import
 		if (!dev)
 			continue
@@ -409,7 +409,7 @@ def processHeartrate(startDate, endDate) {
 
 	data = data.sort {it -> it.date}
 	for (group in data) {
-		def dev = getChildDevice("withings:"+state.userid+":"+group.deviceid)
+		def dev = getChildDevice(buildDNI(group.deviceid))
 		// A device that the user didn't import
 		if (!dev)
 			continue
@@ -420,7 +420,10 @@ def processHeartrate(startDate, endDate) {
 }
 
 def processSleep(startDate, endDate) {
-	
+	def data = apiGet("sleep", "get", [startdate: startDate, enddate: endDate, data_fields: "hr,rr,snoring"])
+
+	if (!data)
+		return
 }
 
 def sendEventsForMeasurements(dev, measurements, types) {
@@ -562,7 +565,7 @@ def refreshDevices() {
 		if (dev != null) {
 			def intBattery = 30
 			if (device.battery == "high")
-				intBattery = 100
+				intBattery = 80
 			else if (device.battery == "medium")
 				intBattery = 50
 			else if (device.battery == "low")
