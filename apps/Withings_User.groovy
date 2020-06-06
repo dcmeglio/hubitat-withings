@@ -555,7 +555,7 @@ def createChildDevices() {
 	for (sleepMonitor in sleepMonitors)
 	{
 		if (!getChildDevice(buildDNI(sleepMonitor)))
-            addChildDevice("dcm.withings", "Withings Sleep Monitor", buildDNI(sleepMonitor), 1234, ["name": "${userName} ${state.devices.sleepMonitors[sleepMonitor]}", isComponent: false])
+            addChildDevice("dcm.withings", "Withings Sleep Sensor", buildDNI(sleepMonitor), 1234, ["name": "${userName} ${state.devices.sleepMonitors[sleepMonitor]}", isComponent: false])
 	}
 	for (activityTracker in activityTrackers)
 	{

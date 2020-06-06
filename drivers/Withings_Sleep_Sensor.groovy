@@ -1,5 +1,5 @@
 /**
- *  Withings Thermometer
+ *  Withings Sleep Sensor
  *
  *  Copyright 2020 Dominick Meglio
  *
