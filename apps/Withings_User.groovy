@@ -254,13 +254,14 @@ def oauthFailure() {
 def refreshToken() {
 	def result = false
 	try {
+		def oauthInfo = parent.getOAuthDetails()
 		def params = [
 			uri: "https://account.withings.com",
 			path: "/oauth2/token",
 			body: [
 				grant_type: "refresh_token",
-				client_id: "90db688ef82e2414426b5c84f0c126af4aa17c1d80a048174bdac2575c8a164f",
-				client_secret: "3432ef512a483310c988135be830b3e1836a46fb298b8da67bb3e90b3a70cc98",
+				client_id: oauthInfo.clientID,
+				client_secret: oauthInfo.clientSecret,
 				refresh_token: state.refreshToken
 			]
 		]
