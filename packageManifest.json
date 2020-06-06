@@ -2,7 +2,7 @@
   "packageName": "Withings Integration",
   "author": "Dominick Meglio",
   "minimumHEVersion": "2.1.9",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "dateReleased": "2020-06-06",
   "documentationLink": "https://github.com/dcmeglio/hubitat-withings/blob/master/README.md",
   "communityLink": "",

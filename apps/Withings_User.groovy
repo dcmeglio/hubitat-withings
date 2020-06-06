@@ -608,14 +608,16 @@ def refreshDevices() {
 	for (device in body?.devices) {
 		def dev = getChildDevice(buildDNI(device.deviceid))
 		if (dev != null) {
-			def intBattery = 30
-			if (device.battery == "high")
-				intBattery = 80
-			else if (device.battery == "medium")
-				intBattery = 50
-			else if (device.battery == "low")
-				intBattery = 20
-			dev.sendEvent(name: "battery", value: intBattery)
+			if (device.type != "Sleep Monitor") {
+				def intBattery = 30
+				if (device.battery == "high")
+					intBattery = 80
+				else if (device.battery == "medium")
+					intBattery = 50
+				else if (device.battery == "low")
+					intBattery = 20
+				dev.sendEvent(name: "battery", value: intBattery)
+			}
 		}
 	}
 }
