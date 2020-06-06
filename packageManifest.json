@@ -1,0 +1,66 @@
+{
+  "packageName": "Withings Integration",
+  "author": "Dominick Meglio",
+  "minimumHEVersion": "2.1.9",
+  "version": "0.9.0"
+  "dateReleased": "2020-06-06",
+  "documentationLink": "https://github.com/dcmeglio/hubitat-withings/blob/master/README.md",
+  "communityLink": "",
+  "apps": [
+    {
+      "id": "975cea5a-0faf-4c21-bd31-ca7f8e87ccfd",
+      "name": "Withings Integration",
+      "namespace": "dcm.withings",
+      "location": "https://raw.githubusercontent.com/dcmeglio/hubitat-withings/master/apps/Withings_Integration.groovy",
+      "required": true,
+      "oauth": false,
+      "primary": true
+    },
+    {
+      "id": "0b8d4dda-57ed-4e94-93e4-a2b0e2fa8ac3",
+      "name": "Withings User",
+      "namespace": "dcm.withings",
+      "location": "https://raw.githubusercontent.com/dcmeglio/hubitat-withings/master/apps/Withings_User.groovy",
+      "required": true,
+      "oauth": true,
+      "primary": false
+    }
+  ],
+  "drivers": [
+    {
+      "id": "cd31025c-1163-4ec5-8542-3847b84acfd8",
+      "name": "Withings Activity Tracker",
+      "namespace": "dcm.withings",
+      "location": "https://raw.githubusercontent.com/dcmeglio/hubitat-withings/master/drivers/Withings_Activity_Tracker.groovy",
+      "required": true
+    },
+    {
+      "id": "d8b1072d-0250-4fd4-adbb-28f932d9feb2",
+      "name": "Withings Blood Pressure Monitor",
+      "namespace": "dcm.withings",
+      "location": "https://raw.githubusercontent.com/dcmeglio/hubitat-withings/master/drivers/Withings_Blood_Pressure_Monitor.groovy",
+      "required": true
+    },
+    {
+      "id": "06d75057-a8ad-4042-9609-93c170c37312",
+      "name": "Withings Scale",
+      "namespace": "dcm.withings",
+      "location": "https://raw.githubusercontent.com/dcmeglio/hubitat-withings/master/drivers/Withings_Scale.groovy",
+      "required": true
+    },
+    {
+      "id": "b36229c9-6047-4cb3-8b94-f1f9c486ceba",
+      "name": "Withings Sleep Sensor",
+      "namespace": "dcm.withings",
+      "location": "https://raw.githubusercontent.com/dcmeglio/hubitat-withings/master/drivers/Withings_Sleep_Sensor.groovy",
+      "required": true
+    },
+    {
+      "id": "8232314f-8abc-4f5d-b829-2db06a4b46fe",
+      "name": "Withings Thermometer",
+      "namespace": "dcm.withings",
+      "location": "https://raw.githubusercontent.com/dcmeglio/hubitat-withings/master/drivers/Withings_Thermometer.groovy",
+      "required": true
+    }
+  ]
+}
