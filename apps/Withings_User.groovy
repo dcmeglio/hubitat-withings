@@ -72,13 +72,13 @@ def massConverter(weight, unit) {
 		return [value: metricValue, unit: "kg", displayValue: "${metricValue}kg"]
 	else if (parent.getMeasurementSystem() == measurementSystems.imperial) {
 		def lbs = (metricValue * 2.20462262)
-		def oz = (int)((lbs-(int)lbs)*16.0).round(0)
+		def oz = (int)(((lbs-(int)lbs)*16.0).round(0))
 		return [value: lbs, unit: "lbs", displayValue: "${(int)lbs}lbs ${oz}oz"]
 	}
 	else if (parent.getMeasurementSystem() == measurementSystems.ukimperial) {
 		def stones = (metricValue * 0.15747304)
 		def lbs = (stones-(int)stones)*14
-		def oz = (int)((lbs-(int)lbs)*16.0).round(0)
+		def oz = (int)(((lbs-(int)lbs)*16.0).round(0))
 		return [value: stones, unit: "st", displayValue: "${(int)stones}st ${(int)lbs}lbs ${oz}oz"]
 	}
 }
@@ -89,7 +89,7 @@ def heightConverter(height, unit) {
 		return [value: metricValue, unit: "m"]
 	else {
 		def ft = metricValue * 3.2808399
-		def inches = (int)((ft-(int)ft)*12.0).round(0)
+		def inches = (int)(((ft-(int)ft)*12.0).round(0))
 		return [value: ft, unit: "ft", displayValue: "${(int)ft}ft ${inches}in"]
 	}
 }
@@ -120,6 +120,20 @@ def oxygenSaturationConverter(o2sat, unit) {
 
 def pulseWaveVelocityConverter(pulsewavevelocity, unit) {
 	return [value: pulsewavevelocity*(10**unit), unit: "m/s"]
+}
+
+def durationConverter(duration) {
+	def hours = (duration * 0.00027778)
+	def minutes = (hours-(int)hours)*60.0
+	def seconds = (int)((minutes-(int)minutes)*60.0)
+
+	def durationStr = ""
+	if (duration/3600 >= 1)
+		durationStr += "${(int)hours}hours "
+	durationStr += "${(int)minutes}minutes "
+	if (seconds > 0)
+		durationStr += "${(int)seconds}seconds"
+	return durationStr
 }
 
 def prefMain() {
@@ -463,23 +477,30 @@ def processSleep(startDate, endDate) {
 
 	for (item in data) {
 		def dev = null
+		def sleepData = item.data
 		// Sleep tracker
 		if (item.model == 32) {
 			dev = getChildByCapability("SleepSensor")
+			// These are not available from an activity tracker.
+			dev.sendEvent(name: "remSleepDuration", value: sleepData.remsleepduration)
+			dev.sendEvent(name: "remSleepDurationDisplay", value: durationConverter(sleepData.remsleepduration))
 		}
 		// Activity monitor
 		else if (item.model == 16) {
 			dev = getChildByCapability("StepSensor")
 		}
-		def sleepData = item.data
 
 		dev.sendEvent(name: "wakeupDuration", value: sleepData.wakeupduration)
+		dev.sendEvent(name: "wakeupDurationDisplay", value: durationConverter(sleepData.wakeupduration))		
 		dev.sendEvent(name: "lightSleepDuration", value: sleepData.lightsleepduration)
+		dev.sendEvent(name: "lightSleepDurationDisplay", value: durationConverter(sleepData.lightsleepduration))
 		dev.sendEvent(name: "deepSleepDuration", value: sleepData.deepsleepduration)
+		dev.sendEvent(name: "deepSleepDurationDisplay", value: durationConverter(sleepData.deepsleepduration))
 		dev.sendEvent(name: "wakeupCount", value: sleepData.wakeupcount)
 		dev.sendEvent(name: "durationToSleep", value: sleepData.durationtosleep)
-		dev.sendEvent(name: "remSleepDuration", value: sleepData.remsleepduration)
+		dev.sendEvent(name: "durationToSleepDisplay", value: durationConverter(sleepData.durationtosleep))
 		dev.sendEvent(name: "durationToWakeup", value: sleepData.durationtowakeup)
+		dev.sendEvent(name: "durationToWakeupDisplay", value: durationConverter(sleepData.durationtowakeup))
 		dev.sendEvent(name: "heartRateAverage", value: sleepData.hr_average)
 		dev.sendEvent(name: "heartRateMin", value: sleepData.hr_min)
 		dev.sendEvent(name: "heartRateMax", value: sleepData.hr_max)
@@ -488,6 +509,7 @@ def processSleep(startDate, endDate) {
 		dev.sendEvent(name: "respirationRateMax", value: sleepData.rr_max)
 		dev.sendEvent(name: "breathingDisturbancesIntensity", value: sleepData.breathing_disturbances_intensity)
 		dev.sendEvent(name: "snoring", value: sleepData.snoring)
+		dev.sendEvent(name: "snoringDisplay", value: durationConverter(sleepData.snoring))
 		dev.sendEvent(name: "snoringEpisodeCount", value: sleepData.snoringepisodecount)
 		dev.sendEvent(name: "sleepScore", value: sleepData.sleep_score)
 	}
@@ -611,7 +633,7 @@ def cleanupChildDevices()
 	for (device in getChildDevices())
 	{
 		def deviceId = device.deviceNetworkId.replace("withings:","")
-		def allDevices = scales + sleepMonitors + activityTrackers + bloodPressure + thermometers
+		def allDevices = scales ?: [] + sleepMonitors ?: [] + activityTrackers ?: [] + bloodPressure ?: [] + thermometers ?: []
 		def deviceFound = false
 		for (dev in allDevices)
 		{
