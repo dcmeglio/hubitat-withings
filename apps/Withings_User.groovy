@@ -397,14 +397,14 @@ def processActivity(date) {
 		dev.sendEvent(name: "intense", value: item.intense )
 		dev.sendEvent(name: "active", value: item.active )
 		dev.sendEvent(name: "calories", value: item.calories )
-		dev.sendEvent(name: "totalcalories", value: item.totalcalories )
-		dev.sendEvent(name: "hr_average", value: item.hr_average )
-		dev.sendEvent(name: "hr_min", value: item.hr_min )
-		dev.sendEvent(name: "hr_max", value: item.hr_max )
-		dev.sendEvent(name: "hr_zone_0", value: item.hr_zone_0 )
-		dev.sendEvent(name: "hr_zone_1", value: item.hr_zone_1 )
-		dev.sendEvent(name: "hr_zone_2", value: item.hr_zone_2 )
-		dev.sendEvent(name: "hr_zone_3", value: item.hr_zone_3 )
+		dev.sendEvent(name: "totalCalories", value: item.totalcalories )
+		dev.sendEvent(name: "heartRateAverage", value: item.hr_average )
+		dev.sendEvent(name: "heartRateMin", value: item.hr_min )
+		dev.sendEvent(name: "heartRateMax", value: item.hr_max )
+		dev.sendEvent(name: "heartRateZone0", value: item.hr_zone_0 )
+		dev.sendEvent(name: "heartRateZone1", value: item.hr_zone_1 )
+		dev.sendEvent(name: "heartRateZone2", value: item.hr_zone_2 )
+		dev.sendEvent(name: "heartRateZone3", value: item.hr_zone_3 )
 	}
 }
 
@@ -454,20 +454,42 @@ def processHeartrate(startDate, endDate) {
 }
 
 def processSleep(startDate, endDate) {
-	def data = apiGet("v2/sleep", "get", [startdate: startDate, enddate: endDate, data_fields: "hr,rr,snoring"])?.series
+	def startYMD = (new Date((long)startDate.toLong()*1000)).format("YYYY-MM-dd")
+	def endYMD = (new Date((long)endDate.toLong()*1000)).format("YYYY-MM-dd")
+	def data = apiGet("v2/sleep", "getsummary", [startdateymd: startYMD, enddateymd: endYMD, data_fields: "breathing_disturbances_intensity,deepsleepduration,durationtosleep,durationtowakeup,hr_average,hr_max,hr_min,lightsleepduration,remsleepduration,rr_average,rr_max,rr_min,sleep_score,snoring,snoringepisodecount,wakeupcount,wakeupduration"])?.series
 
 	if (!data)
 		return
 
 	for (item in data) {
+		def dev = null
 		// Sleep tracker
 		if (item.model == 32) {
-
+			dev = getChildByCapability("SleepSensor")
 		}
 		// Activity monitor
 		else if (item.model == 16) {
-
+			dev = getChildByCapability("StepSensor")
 		}
+		def sleepData = item.data
+
+		dev.sendEvent(name: "wakeupDuration", value: sleepData.wakeupduration)
+		dev.sendEvent(name: "lightSleepDuration", value: sleepData.lightsleepduration)
+		dev.sendEvent(name: "deepSleepDuration", value: sleepData.deepsleepduration)
+		dev.sendEvent(name: "wakeupCount", value: sleepData.wakeupcount)
+		dev.sendEvent(name: "durationToSleep", value: sleepData.durationtosleep)
+		dev.sendEvent(name: "remSleepDuration", value: sleepData.remsleepduration)
+		dev.sendEvent(name: "durationToWakeup", value: sleepData.durationtowakeup)
+		dev.sendEvent(name: "heartRateAverage", value: sleepData.hr_average)
+		dev.sendEvent(name: "heartRateMin", value: sleepData.hr_min)
+		dev.sendEvent(name: "heartRateMax", value: sleepData.hr_max)
+		dev.sendEvent(name: "respirationRateAverage", value: sleepData.rr_average)
+		dev.sendEvent(name: "respirationRateMin", value: sleepData.rr_min)
+		dev.sendEvent(name: "respirationRateMax", value: sleepData.rr_max)
+		dev.sendEvent(name: "breathingDisturbancesIntensity", value: sleepData.breathing_disturbances_intensity)
+		dev.sendEvent(name: "snoring", value: sleepData.snoring)
+		dev.sendEvent(name: "snoringEpisodeCount", value: sleepData.snoringepisodecount)
+		dev.sendEvent(name: "sleepScore", value: sleepData.sleep_score)
 	}
 }
 
@@ -482,6 +504,15 @@ def sendEventsForMeasurements(dev, measurements, types) {
 			dev.sendEvent(name: displayAttrib, value: result.displayValue)
 		}
 	}
+}
+
+def getChildByCapability(capability) {
+	def childDevices = getChildDevices()
+	for (dev in childDevices) {
+		if (dev.hasCapability(capability))
+			return dev
+	}
+	return null
 }
 // API call methods
 

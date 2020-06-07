@@ -10,14 +10,23 @@ metadata {
         capability "Sensor"
         capability "PresenceSensor"
         capability "SleepSensor"
-		capability "Refresh"
-
         
-        attribute "bodyTemperature", "number"
-        attribute "skinTemperature", "number"
+        attribute "wakeupDuration", "number"
+        attribute "lightSleepDuration", "number"
+        attribute "deepSleepDuration", "number"
+        attribute "wakeupCount", "number"
+        attribute "durationToSleep", "number"
+        attribute "remSleepDuration", "number"
+        attribute "durationToWakeup", "number"
+        attribute "heartRateAverage", "number"
+        attribute "heartRateMin", "number"
+        attribute "heartRateMax", "number"
+        attribute "respirationRateAverage", "number"
+        attribute "respirationRateMin", "number"
+        attribute "respirationRateMax", "number"
+        attribute "breathingDisturbancesIntensity", "number"
+        attribute "snoring", "number"
+        attribute "snoringEpisodeCount", "number"
+        attribute "sleepScore", "number"
     }
-}
-
-def refresh() {
-	
 }
