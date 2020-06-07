@@ -9,8 +9,8 @@ metadata {
     definition(name: "Withings Activity Tracker", namespace: "dcm.withings", author: "dmeglio@gmail.com") {
         capability "Sensor"
 		capability "Battery"
+        capability "StepSensor"
 
-        attribute "steps", "number"
         attribute "distance", "number"
         attribute "elevation", "number"
         attribute "soft", "number"
