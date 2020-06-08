@@ -19,6 +19,7 @@ metadata {
         attribute "deepSleepDurationDisplay", "string"
         attribute "wakeupCount", "number"
         attribute "durationToSleep", "number"
+        attribute "durationToSleepDisplay", "number"
         attribute "remSleepDuration", "number"
         attribute "remSleepDurationDisplay", "string"
         attribute "durationToWakeup", "number"
