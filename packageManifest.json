@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "dateReleased": "2020-06-08",
   "documentationLink": "https://github.com/dcmeglio/hubitat-withings/blob/master/README.md",
-  "communityLink": "",
+  "communityLink": "https://community.hubitat.com/t/release-withings-integration/43111",
   "apps": [
     {
       "id": "975cea5a-0faf-4c21-bd31-ca7f8e87ccfd",

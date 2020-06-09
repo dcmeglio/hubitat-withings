@@ -560,7 +560,7 @@ def apiGet(endpoint, action, query = null) {
 		if (query != null)
 			params.query << query
 		httpGet(params) { resp ->
-		logDebug resp.data
+			logDebug resp.data
 			if (resp.data.status == 0)
 				result = resp.data.body
 		}
