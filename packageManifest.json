@@ -2,8 +2,9 @@
   "packageName": "Withings Integration",
   "author": "Dominick Meglio",
   "minimumHEVersion": "2.1.9",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "dateReleased": "2020-06-08",
+  "releaseNotes": "Added better refresh token management and fixed a bug that could prevent sleep data from reporting",
   "documentationLink": "https://github.com/dcmeglio/hubitat-withings/blob/master/README.md",
   "communityLink": "https://community.hubitat.com/t/release-withings-integration/43111",
   "apps": [

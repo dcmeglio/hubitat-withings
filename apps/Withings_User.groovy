@@ -233,7 +233,7 @@ def oauthCallback() {
     			if (resp && resp.data && resp.success) {
                     state.refreshToken = resp.data.refresh_token
                     state.authToken = resp.data.access_token
-                    state.authTokenExpires = now() + (resp.data.expires_in * 1000)
+                    state.authTokenExpires = (now() + (resp.data.expires_in * 1000)) - 10000
 					state.userid = resp.data.userid
                 }
             }
@@ -279,6 +279,7 @@ def refreshToken() {
 				refresh_token: state.refreshToken
 			]
 		]
+		log.debug params
 		httpPost(params) { resp -> 
 			if (resp && resp.data && resp.success) {
 				state.refreshToken = resp.data.refresh_token
@@ -480,7 +481,7 @@ def processSleep(startDate, endDate) {
 		def sleepData = item.data
 		// Sleep tracker
 		if (item.model == 32) {
-			dev = getChildByCapability("SleepSensor")
+			dev = getChildByCapability("PresenceSensor")
 			// These are not available from an activity tracker.
 			dev.sendEvent(name: "remSleepDuration", value: sleepData.remsleepduration)
 			dev.sendEvent(name: "remSleepDurationDisplay", value: durationConverter(sleepData.remsleepduration))
@@ -540,7 +541,7 @@ def getChildByCapability(capability) {
 
 def apiGet(endpoint, action, query = null) {
 	logDebug "${endpoint}?action=${action} -- ${query}"
-	if (state.authTokenExpires < now()) {
+	if (state.authTokenExpires <= now()) {
 		if (!refreshToken())
 			return null
 	}
@@ -563,6 +564,9 @@ def apiGet(endpoint, action, query = null) {
 			logDebug resp.data
 			if (resp.data.status == 0)
 				result = resp.data.body
+			else if (resp.data.status == 401) {
+				refreshToken()
+			}
 		}
 	}
 	catch (e) {
