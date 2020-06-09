@@ -9,7 +9,6 @@ metadata {
     definition(name: "Withings Sleep Sensor", namespace: "dcm.withings", author: "dmeglio@gmail.com") {
         capability "Sensor"
         capability "PresenceSensor"
-        capability "SleepSensor"
         
         attribute "wakeupDuration", "number"
         attribute "wakeupDurationDisplay", "string"
