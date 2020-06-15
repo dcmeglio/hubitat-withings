@@ -34,5 +34,9 @@ metadata {
         attribute "snoringDisplay", "string"
         attribute "snoringEpisodeCount", "number"
         attribute "sleepScore", "number"
+
+        attribute "sleepQuality", "string"
+        attribute "depthQuality", "string"
+        attribute "durationQuality", "string"
     }
 }

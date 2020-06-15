@@ -513,6 +513,31 @@ def processSleep(startDate, endDate) {
 		dev.sendEvent(name: "snoringDisplay", value: durationConverter(sleepData.snoring))
 		dev.sendEvent(name: "snoringEpisodeCount", value: sleepData.snoringepisodecount)
 		dev.sendEvent(name: "sleepScore", value: sleepData.sleep_score)
+
+
+		if (sleepData.sleep_score < 50)
+			dev.sendEvent(name: "sleepQuality", value: "Restless")
+		else if (sleepData.sleep_score < 75)
+			dev.sendEvent(name: "sleepQuality", value: "Average")
+		else
+			dev.sendEvent(name: "sleepQuality", value: "Restful")
+
+		def totalSleepTime = sleepData.lightsleepduration + sleepData.deepsleepduration + (sleepData.remsleepduration ?: 0)
+		if (totalSleepTime < 21600)
+			dev.sendEvent(name: "durationQuality", value: "Bad")
+		else if (totalSleepTime < 25200)
+			dev.sendEvent(name: "durationQuality", value: "Average")
+		else
+			dev.sendEvent(name: "durationQuality", value: "Good")
+
+		def deepRemTime = sleepData.deepsleepduration + (sleepData.remsleepduration ?: 0)
+		def deepRemPct = (deepRemTime*1.0)/(totalSleepTime*1.0)
+		if (deepRemPct < 0.34)
+			dev.sendEvent(name: "depthQuality", value: "Bad")
+		else if (deepRemPct < 0.45)
+			dev.sendEvent(name: "depthQuality", value: "Average")
+		else
+			dev.sendEvent(name: "depthQuality", value: "Good")
 	}
 }
 
