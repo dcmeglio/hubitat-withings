@@ -2,9 +2,9 @@
   "packageName": "Withings Integration",
   "author": "Dominick Meglio",
   "minimumHEVersion": "2.1.9",
-  "version": "1.1.0",
-  "dateReleased": "2020-06-14",
-  "releaseNotes": "Added some of the apps sleep quality metrics",
+  "version": "1.1.1",
+  "dateReleased": "2020-07-22",
+  "releaseNotes": "Added a fix for activity trackers that don't report a deviceid",
   "documentationLink": "https://github.com/dcmeglio/hubitat-withings/blob/master/README.md",
   "communityLink": "https://community.hubitat.com/t/release-withings-integration/43111",
   "apps": [

@@ -279,7 +279,6 @@ def refreshToken() {
 				refresh_token: state.refreshToken
 			]
 		]
-		log.debug params
 		httpPost(params) { resp -> 
 			if (resp && resp.data && resp.success) {
 				state.refreshToken = resp.data.refresh_token
@@ -399,7 +398,12 @@ def processActivity(date) {
 	def data = apiGet("v2/measure", "getactivity", [startdateymd: date, enddateymd: date, data_fields: "steps,distance,elevation,soft,moderate,intense,active,calories,totalcalories,hr_average,hr_min,hr_max,hr_zone_0,hr_zone_1,hr_zone_2,hr_zone_3"])?.activities
 
 	for (item in data) {
-		def dev = getChildDevice(buildDNI(item.deviceid))
+		def dev = null
+
+		if (item.deviceid != null)
+			dev = getChildDevice(buildDNI(item.deviceid))
+		else if (item.is_tracker)
+			dev = getChildByCapability("StepSensor")
 
 		if (!dev)
 			continue
