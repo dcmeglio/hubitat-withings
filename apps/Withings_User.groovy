@@ -408,22 +408,22 @@ def processActivity(date) {
 		if (!dev)
 			continue
 
-		dev.sendEvent(name: "steps", value: item.steps)
-		dev.sendEvent(name: "distance", value: item.distance )
-		dev.sendEvent(name: "elevation", value: item.elevation )
-		dev.sendEvent(name: "soft", value: item.soft )
-		dev.sendEvent(name: "moderate", value: item.moderate )
-		dev.sendEvent(name: "intense", value: item.intense )
-		dev.sendEvent(name: "active", value: item.active )
-		dev.sendEvent(name: "calories", value: item.calories )
-		dev.sendEvent(name: "totalCalories", value: item.totalcalories )
-		dev.sendEvent(name: "heartRateAverage", value: item.hr_average )
-		dev.sendEvent(name: "heartRateMin", value: item.hr_min )
-		dev.sendEvent(name: "heartRateMax", value: item.hr_max )
-		dev.sendEvent(name: "heartRateZone0", value: item.hr_zone_0 )
-		dev.sendEvent(name: "heartRateZone1", value: item.hr_zone_1 )
-		dev.sendEvent(name: "heartRateZone2", value: item.hr_zone_2 )
-		dev.sendEvent(name: "heartRateZone3", value: item.hr_zone_3 )
+		dev.sendEvent(name: "steps", value: item.steps, isStateChange: true)
+		dev.sendEvent(name: "distance", value: item.distance, isStateChange: true)
+		dev.sendEvent(name: "elevation", value: item.elevation, isStateChange: true)
+		dev.sendEvent(name: "soft", value: item.soft, isStateChange: true)
+		dev.sendEvent(name: "moderate", value: item.moderate, isStateChange: true)
+		dev.sendEvent(name: "intense", value: item.intense, isStateChange: true)
+		dev.sendEvent(name: "active", value: item.active, isStateChange: true)
+		dev.sendEvent(name: "calories", value: item.calories, isStateChange: true)
+		dev.sendEvent(name: "totalCalories", value: item.totalcalories, isStateChange: true)
+		dev.sendEvent(name: "heartRateAverage", value: item.hr_average, isStateChange: true)
+		dev.sendEvent(name: "heartRateMin", value: item.hr_min, isStateChange: true)
+		dev.sendEvent(name: "heartRateMax", value: item.hr_max, isStateChange: true)
+		dev.sendEvent(name: "heartRateZone0", value: item.hr_zone_0, isStateChange: true)
+		dev.sendEvent(name: "heartRateZone1", value: item.hr_zone_1, isStateChange: true)
+		dev.sendEvent(name: "heartRateZone2", value: item.hr_zone_2, isStateChange: true)
+		dev.sendEvent(name: "heartRateZone3", value: item.hr_zone_3, isStateChange: true)
 	}
 }
 
@@ -487,61 +487,61 @@ def processSleep(startDate, endDate) {
 		if (item.model == 32) {
 			dev = getChildByCapability("PresenceSensor")
 			// These are not available from an activity tracker.
-			dev.sendEvent(name: "remSleepDuration", value: sleepData.remsleepduration)
-			dev.sendEvent(name: "remSleepDurationDisplay", value: durationConverter(sleepData.remsleepduration))
+			dev.sendEvent(name: "remSleepDuration", value: sleepData.remsleepduration, isStateChange: true)
+			dev.sendEvent(name: "remSleepDurationDisplay", value: durationConverter(sleepData.remsleepduration), isStateChange: true)
 		}
 		// Activity monitor
 		else if (item.model == 16) {
 			dev = getChildByCapability("StepSensor")
 		}
 
-		dev.sendEvent(name: "wakeupDuration", value: sleepData.wakeupduration)
-		dev.sendEvent(name: "wakeupDurationDisplay", value: durationConverter(sleepData.wakeupduration))		
-		dev.sendEvent(name: "lightSleepDuration", value: sleepData.lightsleepduration)
-		dev.sendEvent(name: "lightSleepDurationDisplay", value: durationConverter(sleepData.lightsleepduration))
-		dev.sendEvent(name: "deepSleepDuration", value: sleepData.deepsleepduration)
-		dev.sendEvent(name: "deepSleepDurationDisplay", value: durationConverter(sleepData.deepsleepduration))
-		dev.sendEvent(name: "wakeupCount", value: sleepData.wakeupcount)
-		dev.sendEvent(name: "durationToSleep", value: sleepData.durationtosleep)
-		dev.sendEvent(name: "durationToSleepDisplay", value: durationConverter(sleepData.durationtosleep))
-		dev.sendEvent(name: "durationToWakeup", value: sleepData.durationtowakeup)
-		dev.sendEvent(name: "durationToWakeupDisplay", value: durationConverter(sleepData.durationtowakeup))
-		dev.sendEvent(name: "heartRateAverage", value: sleepData.hr_average)
-		dev.sendEvent(name: "heartRateMin", value: sleepData.hr_min)
-		dev.sendEvent(name: "heartRateMax", value: sleepData.hr_max)
-		dev.sendEvent(name: "respirationRateAverage", value: sleepData.rr_average)
-		dev.sendEvent(name: "respirationRateMin", value: sleepData.rr_min)
-		dev.sendEvent(name: "respirationRateMax", value: sleepData.rr_max)
-		dev.sendEvent(name: "breathingDisturbancesIntensity", value: sleepData.breathing_disturbances_intensity)
-		dev.sendEvent(name: "snoring", value: sleepData.snoring)
-		dev.sendEvent(name: "snoringDisplay", value: durationConverter(sleepData.snoring))
-		dev.sendEvent(name: "snoringEpisodeCount", value: sleepData.snoringepisodecount)
-		dev.sendEvent(name: "sleepScore", value: sleepData.sleep_score)
+		dev.sendEvent(name: "wakeupDuration", value: sleepData.wakeupduration, isStateChange: true)
+		dev.sendEvent(name: "wakeupDurationDisplay", value: durationConverter(sleepData.wakeupduration), isStateChange: true)	
+		dev.sendEvent(name: "lightSleepDuration", value: sleepData.lightsleepduration, isStateChange: true)
+		dev.sendEvent(name: "lightSleepDurationDisplay", value: durationConverter(sleepData.lightsleepduration), isStateChange: true)
+		dev.sendEvent(name: "deepSleepDuration", value: sleepData.deepsleepduration, isStateChange: true)
+		dev.sendEvent(name: "deepSleepDurationDisplay", value: durationConverter(sleepData.deepsleepduration), isStateChange: true)
+		dev.sendEvent(name: "wakeupCount", value: sleepData.wakeupcount, isStateChange: true)
+		dev.sendEvent(name: "durationToSleep", value: sleepData.durationtosleep, isStateChange: true)
+		dev.sendEvent(name: "durationToSleepDisplay", value: durationConverter(sleepData.durationtosleep), isStateChange: true)
+		dev.sendEvent(name: "durationToWakeup", value: sleepData.durationtowakeup, isStateChange: true)
+		dev.sendEvent(name: "durationToWakeupDisplay", value: durationConverter(sleepData.durationtowakeup), isStateChange: true)
+		dev.sendEvent(name: "heartRateAverage", value: sleepData.hr_average, isStateChange: true)
+		dev.sendEvent(name: "heartRateMin", value: sleepData.hr_min, isStateChange: true)
+		dev.sendEvent(name: "heartRateMax", value: sleepData.hr_max, isStateChange: true)
+		dev.sendEvent(name: "respirationRateAverage", value: sleepData.rr_average, isStateChange: true)
+		dev.sendEvent(name: "respirationRateMin", value: sleepData.rr_min, isStateChange: true)
+		dev.sendEvent(name: "respirationRateMax", value: sleepData.rr_max, isStateChange: true)
+		dev.sendEvent(name: "breathingDisturbancesIntensity", value: sleepData.breathing_disturbances_intensity, isStateChange: true)
+		dev.sendEvent(name: "snoring", value: sleepData.snoring, isStateChange: true)
+		dev.sendEvent(name: "snoringDisplay", value: durationConverter(sleepData.snoring), isStateChange: true)
+		dev.sendEvent(name: "snoringEpisodeCount", value: sleepData.snoringepisodecount, isStateChange: true)
+		dev.sendEvent(name: "sleepScore", value: sleepData.sleep_score, isStateChange: true)
 
 
 		if (sleepData.sleep_score < 50)
-			dev.sendEvent(name: "sleepQuality", value: "Restless")
+			dev.sendEvent(name: "sleepQuality", value: "Restless", isStateChange: true)
 		else if (sleepData.sleep_score < 75)
-			dev.sendEvent(name: "sleepQuality", value: "Average")
+			dev.sendEvent(name: "sleepQuality", value: "Average", isStateChange: true)
 		else
-			dev.sendEvent(name: "sleepQuality", value: "Restful")
+			dev.sendEvent(name: "sleepQuality", value: "Restful", isStateChange: true)
 
 		def totalSleepTime = sleepData.lightsleepduration + sleepData.deepsleepduration + (sleepData.remsleepduration ?: 0)
 		if (totalSleepTime < 21600)
-			dev.sendEvent(name: "durationQuality", value: "Bad")
+			dev.sendEvent(name: "durationQuality", value: "Bad", isStateChange: true)
 		else if (totalSleepTime < 25200)
-			dev.sendEvent(name: "durationQuality", value: "Average")
+			dev.sendEvent(name: "durationQuality", value: "Average", isStateChange: true)
 		else
-			dev.sendEvent(name: "durationQuality", value: "Good")
+			dev.sendEvent(name: "durationQuality", value: "Good", isStateChange: true)
 
 		def deepRemTime = sleepData.deepsleepduration + (sleepData.remsleepduration ?: 0)
 		def deepRemPct = (deepRemTime*1.0)/(totalSleepTime*1.0)
 		if (deepRemPct < 0.34)
-			dev.sendEvent(name: "depthQuality", value: "Bad")
+			dev.sendEvent(name: "depthQuality", value: "Bad", isStateChange: true)
 		else if (deepRemPct < 0.45)
-			dev.sendEvent(name: "depthQuality", value: "Average")
+			dev.sendEvent(name: "depthQuality", value: "Average", isStateChange: true)
 		else
-			dev.sendEvent(name: "depthQuality", value: "Good")
+			dev.sendEvent(name: "depthQuality", value: "Good", isStateChange: true)
 	}
 }
 
@@ -551,9 +551,9 @@ def sendEventsForMeasurements(dev, measurements, types) {
 			def attrib = measures[measurement.type].attribute
 			def displayAttrib = measures[measurement.type].displayAttribute
 			def result = measures[measurement.type].converter.call(measurement.value, measurement.unit)
-			dev.sendEvent(name: attrib, value: result.value, unit: result.unit)
+			dev.sendEvent(name: attrib, value: result.value, unit: result.unit, isStateChange: true)
 			if (displayAttrib != null)
-			dev.sendEvent(name: displayAttrib, value: result.displayValue)
+				dev.sendEvent(name: displayAttrib, value: result.displayValue, isStateChange: true)
 		}
 	}
 }
