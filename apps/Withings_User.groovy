@@ -36,6 +36,7 @@ preferences {
 
 @Field static def applids = [
 	weight: 1,
+	temperature: 2,
 	heartrate: 4,
 	activity: 16,
 	sleep: 44,
@@ -349,6 +350,9 @@ def updateSubscriptions() {
 		apiGet("notify", "subscribe", [callbackurl: callbackUrl("bedIn"), appli: applids.bedIn])
 		apiGet("notify", "subscribe", [callbackurl: callbackUrl("bedOut"), appli: applids.bedOut])
 	}
+	if (thermometers?.size() > 0) {
+		apiGet("notify", "subscribe", [callbackurl: callbackUrl("temperature"), appli: applids.temperature])
+	}
 }
 
 def callbackUrl(type) {
@@ -390,6 +394,10 @@ def asyncWithingsNotificationHandler(params) {
 		case "sleep":
 			if (params.startdate != null)
 				processSleep(params.startdate, params.enddate)
+			break
+		case "temperature":
+			if (params.startdate != null)
+				processTemperature(params.startdate, params.enddate)
 			break
 	}
 }
@@ -542,6 +550,24 @@ def processSleep(startDate, endDate) {
 			dev.sendEvent(name: "depthQuality", value: "Average", isStateChange: true)
 		else
 			dev.sendEvent(name: "depthQuality", value: "Good", isStateChange: true)
+	}
+}
+
+def processTemperature(startDate, endDate) {
+	def data = apiGet("measure", "getmeas", [startdate: startDate, enddate: endDate, category: 1])?.measuregrps
+
+	if (!data)
+		return
+
+	data = data.sort {it -> it.date}
+	for (group in data) {
+		def dev = getChildDevice(buildDNI(group.deviceid))
+		// A device that the user didn't import
+		if (!dev)
+			continue
+
+		// Temperature related measurements
+		sendEventsForMeasurements(dev, group.measures, [12,71,73])
 	}
 }
 
