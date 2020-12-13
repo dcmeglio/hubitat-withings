@@ -315,7 +315,7 @@ def getWithingsDevices() {
 		else if (device.type == "Sleep Monitor")
 			sleepMonitors[device.deviceid] = device.model
 		else if (device.type == "Activity Tracker")
-			activityTrackers[device.deviceid] = device.model
+			activityTrackers[device.deviceid] = device.model ?: "Unnamed Activity Tracker"
 		else if (device.type == "Blood Pressure Monitor")
 			bloodPressure[device.deviceid] = device.model
 		else if (device.type == "Smart Connected Thermometer")
@@ -692,7 +692,7 @@ def cleanupChildDevices()
 	for (device in getChildDevices())
 	{
 		def deviceId = device.deviceNetworkId.replace("withings:","")
-		def allDevices = scales ?: [] + sleepMonitors ?: [] + activityTrackers ?: [] + bloodPressure ?: [] + thermometers ?: []
+		def allDevices = (scales ?: []) + (sleepMonitors ?: []) + (activityTrackers ?: []) + (bloodPressure ?: []) + (thermometers ?: [])
 		def deviceFound = false
 		for (dev in allDevices)
 		{
@@ -702,7 +702,7 @@ def cleanupChildDevices()
 				break
 			}
 		}
-				
+
 		if (deviceFound == true)
 			continue
 			
