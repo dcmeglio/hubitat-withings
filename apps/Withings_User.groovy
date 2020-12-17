@@ -108,6 +108,7 @@ def pulseConverter(pulse, unit) {
 }
 
 def temperatureConverter(temp, unit) {
+	log.debug "Temp: ${temp} Unit: ${unit} Result: ${temp*(10**unit)}"
 	if (parent.getMeasurementSystem() == measurementSystems.metric)
 		return [value: temp*(10**unit), unit: "C"]
 	else {
