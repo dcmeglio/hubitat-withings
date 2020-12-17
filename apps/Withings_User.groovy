@@ -523,7 +523,7 @@ def processSleep(startDate, endDate) {
 		dev.sendEvent(name: "respirationRateMax", value: sleepData.rr_max, isStateChange: true)
 		dev.sendEvent(name: "breathingDisturbancesIntensity", value: sleepData.breathing_disturbances_intensity, isStateChange: true)
 		dev.sendEvent(name: "snoring", value: sleepData.snoring, isStateChange: true)
-		dev.sendEvent(name: "snoringDisplay", value: durationConverter(sleepData.snoring), isStateChange: true)
+		dev.sendEvent(name: "snoringDisplay", value: durationConverter(sleepData.snoring ?: 0), isStateChange: true)
 		dev.sendEvent(name: "snoringEpisodeCount", value: sleepData.snoringepisodecount, isStateChange: true)
 		dev.sendEvent(name: "sleepScore", value: sleepData.sleep_score, isStateChange: true)
 
