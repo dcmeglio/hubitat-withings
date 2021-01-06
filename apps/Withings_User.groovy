@@ -108,10 +108,11 @@ def pulseConverter(pulse, unit) {
 }
 
 def temperatureConverter(temp, unit) {
+	log.debug "Temp: ${temp} Unit: ${unit} Result: ${temp*(10**unit)}"
 	if (parent.getMeasurementSystem() == measurementSystems.metric)
 		return [value: temp*(10**unit), unit: "C"]
 	else {
-		return [value: fahrenheitToCelsius(temp*(10**unit)), unit: "F"]
+		return [value: ((double)celsiusToFahrenheit(temp*(10**unit))).round(1), unit: "F"]
 	}
 }
 
@@ -234,7 +235,7 @@ def oauthCallback() {
     			if (resp && resp.data && resp.success) {
                     state.refreshToken = resp.data.refresh_token
                     state.authToken = resp.data.access_token
-                    state.authTokenExpires = (now() + (resp.data.expires_in * 1000)) - 10000
+                    state.authTokenExpires = (now() + (resp.data.expires_in * 1000)) - 60000
 					state.userid = resp.data.userid
                 }
             }
@@ -284,7 +285,7 @@ def refreshToken() {
 			if (resp && resp.data && resp.success) {
 				state.refreshToken = resp.data.refresh_token
                 state.authToken = resp.data.access_token
-                state.authTokenExpires = now() + (resp.data.expires_in * 1000)
+                state.authTokenExpires = now() + (resp.data.expires_in * 1000) - 60000
 				result = true
 			}
 			else {
@@ -522,7 +523,7 @@ def processSleep(startDate, endDate) {
 		dev.sendEvent(name: "respirationRateMax", value: sleepData.rr_max, isStateChange: true)
 		dev.sendEvent(name: "breathingDisturbancesIntensity", value: sleepData.breathing_disturbances_intensity, isStateChange: true)
 		dev.sendEvent(name: "snoring", value: sleepData.snoring, isStateChange: true)
-		dev.sendEvent(name: "snoringDisplay", value: durationConverter(sleepData.snoring), isStateChange: true)
+		dev.sendEvent(name: "snoringDisplay", value: durationConverter(sleepData.snoring ?: 0), isStateChange: true)
 		dev.sendEvent(name: "snoringEpisodeCount", value: sleepData.snoringepisodecount, isStateChange: true)
 		dev.sendEvent(name: "sleepScore", value: sleepData.sleep_score, isStateChange: true)
 
@@ -616,7 +617,6 @@ def apiGet(endpoint, action, query = null) {
 		if (query != null)
 			params.query << query
 		httpGet(params) { resp ->
-			logDebug resp.data
 			if (resp.data.status == 0)
 				result = resp.data.body
 			else if (resp.data.status == 401) {
