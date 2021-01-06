@@ -112,7 +112,7 @@ def temperatureConverter(temp, unit) {
 	if (parent.getMeasurementSystem() == measurementSystems.metric)
 		return [value: temp*(10**unit), unit: "C"]
 	else {
-		return [value: celsiusToFahrenheit(temp*(10**unit)).round(1), unit: "F"]
+		return [value: ((double)celsiusToFahrenheit(temp*(10**unit))).round(1), unit: "F"]
 	}
 }
 
