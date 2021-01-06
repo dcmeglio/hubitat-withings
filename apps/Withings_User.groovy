@@ -235,7 +235,7 @@ def oauthCallback() {
     			if (resp && resp.data && resp.success) {
                     state.refreshToken = resp.data.refresh_token
                     state.authToken = resp.data.access_token
-                    state.authTokenExpires = (now() + (resp.data.expires_in * 1000)) - 10000
+                    state.authTokenExpires = (now() + (resp.data.expires_in * 1000)) - 60000
 					state.userid = resp.data.userid
                 }
             }
@@ -285,7 +285,7 @@ def refreshToken() {
 			if (resp && resp.data && resp.success) {
 				state.refreshToken = resp.data.refresh_token
                 state.authToken = resp.data.access_token
-                state.authTokenExpires = now() + (resp.data.expires_in * 1000)
+                state.authTokenExpires = now() + (resp.data.expires_in * 1000) - 60000
 				result = true
 			}
 			else {
@@ -617,7 +617,6 @@ def apiGet(endpoint, action, query = null) {
 		if (query != null)
 			params.query << query
 		httpGet(params) { resp ->
-			logDebug resp.data
 			if (resp.data.status == 0)
 				result = resp.data.body
 			else if (resp.data.status == 401) {
