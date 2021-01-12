@@ -169,13 +169,18 @@ def prefDevices() {
 			if (state.devices?.scales?.size() > 0)
 				input "scales", "enum", title: "Scales", options: state.devices.scales, multiple: true
 			if (state.devices?.sleepMonitors?.size() > 0)
-				input "sleepMonitors", "enum", title: "Sleep Monitors", options: state.devices.sleepMonitors, multiple: true
+				input "sleepMonitors", "enum", title: "Sleep Monitors", options: state.devices.sleepMonitors, multiple: true, submitOnChange: true
 			if (state.devices?.activityTrackers?.size() > 0)
 				input "activityTrackers", "enum", title: "Activity Trackers", options: state.devices.activityTrackers, multiple: true
 			if (state.devices?.bloodPressure?.size() > 0)
 				input "bloodPressure", "enum", title: "Blood Pressure Monitors", options: state.devices.bloodPressure, multiple: true
 			if (state.devices?.thermometers?.size() > 0)
 				input "thermometers", "enum", title: "Thermometers", options: state.devices.thermometers, multiple: true
+		}
+		if (sleepMonitors?.size() > 0) {
+			section {
+				input "sleepSwitches", "capability.switch", title: "Switches to turn on when someone gets into bed and off when they get out", multiple: true
+			}
 		}
 	}
 }
@@ -440,6 +445,13 @@ def processBedPresence(inBed, deviceID) {
 
 	if (!dev)
 		return
+
+	if (sleepSwitches?.size() > 0) {
+		if (inBed)
+			sleepSwitches*.on()
+		else
+			sleepSwitches*.off()
+	}
 
 	dev.sendEvent(name: "presence", value: inBed ? "present" : "not present")
 }
