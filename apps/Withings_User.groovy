@@ -108,7 +108,6 @@ def pulseConverter(pulse, unit) {
 }
 
 def temperatureConverter(temp, unit) {
-	log.debug "Temp: ${temp} Unit: ${unit} Result: ${temp*(10**unit)}"
 	if (parent.getMeasurementSystem() == measurementSystems.metric)
 		return [value: temp*(10**unit), unit: "C"]
 	else {
@@ -227,9 +226,10 @@ def oauthCallback() {
 		def oauthInfo = parent.getOAuthDetails()
         try { 
             httpPost([
-				uri: "https://account.withings.com",
-				path: "/oauth2/token",
+				uri: "https://wbsapi.withings.net",
+				path: "/v2/oauth2",
 				body: [
+					"action": "requesttoken",
 					"grant_type": "authorization_code",
 					code: params.code,
 					client_id : oauthInfo.clientID,
@@ -238,10 +238,10 @@ def oauthCallback() {
 				]
 			]) { resp ->
     			if (resp && resp.data && resp.success) {
-                    state.refreshToken = resp.data.refresh_token
-                    state.authToken = resp.data.access_token
-                    state.authTokenExpires = (now() + (resp.data.expires_in * 1000)) - 60000
-					state.userid = resp.data.userid
+                    state.refreshToken = resp.data.body.refresh_token
+                    state.authToken = resp.data.body.access_token
+                    state.authTokenExpires = (now() + (resp.data.body.expires_in * 1000)) - 60000
+					state.userid = resp.data.body.userid
                 }
             }
 		} 
@@ -277,9 +277,10 @@ def refreshToken() {
 	try {
 		def oauthInfo = parent.getOAuthDetails()
 		def params = [
-			uri: "https://account.withings.com",
-			path: "/oauth2/token",
+			uri: "https://wbsapi.withings.net",
+			path: "/v2/oauth2",
 			body: [
+				"action": "requesttoken",
 				grant_type: "refresh_token",
 				client_id: oauthInfo.clientID,
 				client_secret: oauthInfo.clientSecret,
@@ -288,9 +289,9 @@ def refreshToken() {
 		]
 		httpPost(params) { resp -> 
 			if (resp && resp.data && resp.success) {
-				state.refreshToken = resp.data.refresh_token
-                state.authToken = resp.data.access_token
-                state.authTokenExpires = now() + (resp.data.expires_in * 1000) - 60000
+				state.refreshToken = resp.data.body.refresh_token
+                state.authToken = resp.data.body.access_token
+                state.authTokenExpires = now() + (resp.data.body.expires_in * 1000) - 60000
 				result = true
 			}
 			else {
@@ -496,74 +497,83 @@ def processHeartrate(startDate, endDate) {
 def processSleep(startDate, endDate) {
 	def startYMD = (new Date((long)startDate.toLong()*1000)).format("YYYY-MM-dd")
 	def endYMD = (new Date((long)endDate.toLong()*1000)).format("YYYY-MM-dd")
+
 	def data = apiGet("v2/sleep", "getsummary", [startdateymd: startYMD, enddateymd: endYMD, data_fields: "breathing_disturbances_intensity,deepsleepduration,durationtosleep,durationtowakeup,hr_average,hr_max,hr_min,lightsleepduration,remsleepduration,rr_average,rr_max,rr_min,sleep_score,snoring,snoringepisodecount,wakeupcount,wakeupduration"])?.series
 
 	if (!data)
 		return
 
-	for (item in data) {
-		def dev = null
-		def sleepData = item.data
-		// Sleep tracker
-		if (item.model == 32) {
-			dev = getChildByCapability("PresenceSensor")
-			// These are not available from an activity tracker.
-			dev.sendEvent(name: "remSleepDuration", value: sleepData.remsleepduration, isStateChange: true)
-			dev.sendEvent(name: "remSleepDurationDisplay", value: durationConverter(sleepData.remsleepduration), isStateChange: true)
-		}
-		// Activity monitor
-		else if (item.model == 16) {
-			dev = getChildByCapability("StepSensor")
-		}
+	if (startDate.toLong() == state.lastSleepStart && endDate.toLong() == state.lastSleepEnd)
+		return
 
-		dev.sendEvent(name: "wakeupDuration", value: sleepData.wakeupduration, isStateChange: true)
-		dev.sendEvent(name: "wakeupDurationDisplay", value: durationConverter(sleepData.wakeupduration), isStateChange: true)	
-		dev.sendEvent(name: "lightSleepDuration", value: sleepData.lightsleepduration, isStateChange: true)
-		dev.sendEvent(name: "lightSleepDurationDisplay", value: durationConverter(sleepData.lightsleepduration), isStateChange: true)
-		dev.sendEvent(name: "deepSleepDuration", value: sleepData.deepsleepduration, isStateChange: true)
-		dev.sendEvent(name: "deepSleepDurationDisplay", value: durationConverter(sleepData.deepsleepduration), isStateChange: true)
-		dev.sendEvent(name: "wakeupCount", value: sleepData.wakeupcount, isStateChange: true)
-		dev.sendEvent(name: "durationToSleep", value: sleepData.durationtosleep, isStateChange: true)
-		dev.sendEvent(name: "durationToSleepDisplay", value: durationConverter(sleepData.durationtosleep), isStateChange: true)
-		dev.sendEvent(name: "durationToWakeup", value: sleepData.durationtowakeup, isStateChange: true)
-		dev.sendEvent(name: "durationToWakeupDisplay", value: durationConverter(sleepData.durationtowakeup), isStateChange: true)
-		dev.sendEvent(name: "heartRateAverage", value: sleepData.hr_average, isStateChange: true)
-		dev.sendEvent(name: "heartRateMin", value: sleepData.hr_min, isStateChange: true)
-		dev.sendEvent(name: "heartRateMax", value: sleepData.hr_max, isStateChange: true)
-		dev.sendEvent(name: "respirationRateAverage", value: sleepData.rr_average, isStateChange: true)
-		dev.sendEvent(name: "respirationRateMin", value: sleepData.rr_min, isStateChange: true)
-		dev.sendEvent(name: "respirationRateMax", value: sleepData.rr_max, isStateChange: true)
-		dev.sendEvent(name: "breathingDisturbancesIntensity", value: sleepData.breathing_disturbances_intensity, isStateChange: true)
-		dev.sendEvent(name: "snoring", value: sleepData.snoring, isStateChange: true)
-		dev.sendEvent(name: "snoringDisplay", value: durationConverter(sleepData.snoring ?: 0), isStateChange: true)
-		dev.sendEvent(name: "snoringEpisodeCount", value: sleepData.snoringepisodecount, isStateChange: true)
-		dev.sendEvent(name: "sleepScore", value: sleepData.sleep_score, isStateChange: true)
+	def item = data.last()
+	def sleepData = item.data
+	def dev = null
 
+	
 
-		if (sleepData.sleep_score < 50)
-			dev.sendEvent(name: "sleepQuality", value: "Restless", isStateChange: true)
-		else if (sleepData.sleep_score < 75)
-			dev.sendEvent(name: "sleepQuality", value: "Average", isStateChange: true)
-		else
-			dev.sendEvent(name: "sleepQuality", value: "Restful", isStateChange: true)
-
-		def totalSleepTime = sleepData.lightsleepduration + sleepData.deepsleepduration + (sleepData.remsleepduration ?: 0)
-		if (totalSleepTime < 21600)
-			dev.sendEvent(name: "durationQuality", value: "Bad", isStateChange: true)
-		else if (totalSleepTime < 25200)
-			dev.sendEvent(name: "durationQuality", value: "Average", isStateChange: true)
-		else
-			dev.sendEvent(name: "durationQuality", value: "Good", isStateChange: true)
-
-		def deepRemTime = sleepData.deepsleepduration + (sleepData.remsleepduration ?: 0)
-		def deepRemPct = (deepRemTime*1.0)/(totalSleepTime*1.0)
-		if (deepRemPct < 0.34)
-			dev.sendEvent(name: "depthQuality", value: "Bad", isStateChange: true)
-		else if (deepRemPct < 0.45)
-			dev.sendEvent(name: "depthQuality", value: "Average", isStateChange: true)
-		else
-			dev.sendEvent(name: "depthQuality", value: "Good", isStateChange: true)
+	// Sleep tracker
+	if (item.model == 32) {
+		dev = getChildByCapability("PresenceSensor")
+		// These are not available from an activity tracker.
+		dev.sendEvent(name: "remSleepDuration", value: sleepData.remsleepduration, isStateChange: true)
+		dev.sendEvent(name: "remSleepDurationDisplay", value: durationConverter(sleepData.remsleepduration), isStateChange: true)
 	}
+	// Activity monitor
+	else if (item.model == 16) {
+		dev = getChildByCapability("StepSensor")
+	}
+
+	dev.sendEvent(name: "wakeupDuration", value: sleepData.wakeupduration, isStateChange: true)
+	dev.sendEvent(name: "wakeupDurationDisplay", value: durationConverter(sleepData.wakeupduration), isStateChange: true)	
+	dev.sendEvent(name: "lightSleepDuration", value: sleepData.lightsleepduration, isStateChange: true)
+	dev.sendEvent(name: "lightSleepDurationDisplay", value: durationConverter(sleepData.lightsleepduration), isStateChange: true)
+	dev.sendEvent(name: "deepSleepDuration", value: sleepData.deepsleepduration, isStateChange: true)
+	dev.sendEvent(name: "deepSleepDurationDisplay", value: durationConverter(sleepData.deepsleepduration), isStateChange: true)
+	dev.sendEvent(name: "wakeupCount", value: sleepData.wakeupcount, isStateChange: true)
+	dev.sendEvent(name: "durationToSleep", value: sleepData.durationtosleep, isStateChange: true)
+	dev.sendEvent(name: "durationToSleepDisplay", value: durationConverter(sleepData.durationtosleep), isStateChange: true)
+	dev.sendEvent(name: "durationToWakeup", value: sleepData.durationtowakeup, isStateChange: true)
+	dev.sendEvent(name: "durationToWakeupDisplay", value: durationConverter(sleepData.durationtowakeup), isStateChange: true)
+	dev.sendEvent(name: "heartRateAverage", value: sleepData.hr_average, isStateChange: true)
+	dev.sendEvent(name: "heartRateMin", value: sleepData.hr_min, isStateChange: true)
+	dev.sendEvent(name: "heartRateMax", value: sleepData.hr_max, isStateChange: true)
+	dev.sendEvent(name: "respirationRateAverage", value: sleepData.rr_average, isStateChange: true)
+	dev.sendEvent(name: "respirationRateMin", value: sleepData.rr_min, isStateChange: true)
+	dev.sendEvent(name: "respirationRateMax", value: sleepData.rr_max, isStateChange: true)
+	dev.sendEvent(name: "breathingDisturbancesIntensity", value: sleepData.breathing_disturbances_intensity, isStateChange: true)
+	dev.sendEvent(name: "snoring", value: sleepData.snoring, isStateChange: true)
+	dev.sendEvent(name: "snoringDisplay", value: durationConverter(sleepData.snoring ?: 0), isStateChange: true)
+	dev.sendEvent(name: "snoringEpisodeCount", value: sleepData.snoringepisodecount, isStateChange: true)
+	dev.sendEvent(name: "sleepScore", value: sleepData.sleep_score, isStateChange: true)
+
+
+	if (sleepData.sleep_score < 50)
+		dev.sendEvent(name: "sleepQuality", value: "Restless", isStateChange: true)
+	else if (sleepData.sleep_score < 75)
+		dev.sendEvent(name: "sleepQuality", value: "Average", isStateChange: true)
+	else
+		dev.sendEvent(name: "sleepQuality", value: "Restful", isStateChange: true)
+
+	def totalSleepTime = sleepData.lightsleepduration + sleepData.deepsleepduration + (sleepData.remsleepduration ?: 0)
+	if (totalSleepTime < 21600)
+		dev.sendEvent(name: "durationQuality", value: "Bad", isStateChange: true)
+	else if (totalSleepTime < 25200)
+		dev.sendEvent(name: "durationQuality", value: "Average", isStateChange: true)
+	else
+		dev.sendEvent(name: "durationQuality", value: "Good", isStateChange: true)
+
+	def deepRemTime = sleepData.deepsleepduration + (sleepData.remsleepduration ?: 0)
+	def deepRemPct = (deepRemTime*1.0)/(totalSleepTime*1.0)
+	if (deepRemPct < 0.34)
+		dev.sendEvent(name: "depthQuality", value: "Bad", isStateChange: true)
+	else if (deepRemPct < 0.45)
+		dev.sendEvent(name: "depthQuality", value: "Average", isStateChange: true)
+	else
+		dev.sendEvent(name: "depthQuality", value: "Good", isStateChange: true)
+
+	state.lastSleepStart = startDate.toLong()
+	state.lastSleepEnd = endDate.toLong()
 }
 
 def processTemperature(startDate, endDate) {
