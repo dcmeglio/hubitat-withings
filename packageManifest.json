@@ -2,9 +2,9 @@
   "packageName": "Withings Integration",
   "author": "Dominick Meglio",
   "minimumHEVersion": "2.1.9",
-  "version": "1.4.0",
-  "dateReleased": "2021-01-11",
-  "releaseNotes": "Added support for toggling switches when someone gets in or out of bed.",
+  "version": "1.5.0",
+  "dateReleased": "2021-05-26",
+  "releaseNotes": "Fixed an issue where duplicate sleep data could be recorded. Also added support for the new OAuth required by Withings. Note, though their documentation does not say this, you may need to reauthenticate the app to Withings.",
   "documentationLink": "https://github.com/dcmeglio/hubitat-withings/blob/master/README.md",
   "communityLink": "https://community.hubitat.com/t/release-withings-integration/43111",
   "apps": [
