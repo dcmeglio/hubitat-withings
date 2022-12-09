@@ -15,3 +15,6 @@ Enter both the Client Id and Consumer Secret from above in the Withings Integrat
 
 ## Donations
 If you find this app useful, please consider making a [donation](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7LBRPJRLJSDDN&source=url)! 
+
+## License
+BSD 3-Clause License

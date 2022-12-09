@@ -4,8 +4,10 @@
  *
  *  Copyright 2020 Dominick Meglio
  *
- *	If you find this useful, donations are always appreciated 
- *	https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7LBRPJRLJSDDN&source=url
+ *  Licensed Virtual the BSD 3-Clause License
+ *
+ *  Change History:
+ *  v1.6.0 - Released under BSD 3-Clause License
  */
  
 import groovy.transform.Field

@@ -2,7 +2,10 @@
  *  Withings Activity Tracker
  *
  *  Copyright 2020 Dominick Meglio
+ *  Licensed under the BSD 3-Clause License
  *
+ *  Change History:
+ *  v1.6.0 - Released under BSD 3-Clause License
  */
 
 metadata {
